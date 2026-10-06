@@ -1,0 +1,1224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  GENIE sensor AIML  -  v2, 05-08-2026
+
+  Extends the original with:
+    * FLAME as its own sensor. "IS THERE A FIRE" used to route to SMOKE.
+      The flame sensor reacts in ~200 ms; the MQ-2 needs smoke to physically
+      reach it. For a fire question the flame sensor is the right answer.
+    * FALL as its own sensor, separate from MOTION. A fall is a safety event,
+      "did you move" is not. They deserve different words.
+    * GRADED LEVELS instead of true/false. The MQ-2 reports clear / elevated /
+      alarm and the flame sensor reports clear / detected / alarm. Collapsing
+      those to a boolean throws away information the hardware already gives us.
+      Boolean values are still accepted so the old ai.py keeps working.
+    * UNAVAILABLE handling. If a sensor is not wired or has not reported yet,
+      AIML used to fall through a <condition> and return an empty string, so
+      Genie said nothing at all. Every condition now has a default <li>.
+    * OVERALL STATUS. "Is everything ok" checks the three safety sensors.
+
+  PREDICATES this file expects ai.py to set before responding to CHECK SENSOR:
+
+      sensor            SMOKE | FLAME | IR | MOTION | FALL | TEMPERATURE
+                        | HUMIDITY | ALL
+      smoke_status      clear | elevated | alarm      (or true / false)
+      flame_status      clear | detected | alarm      (or true / false)
+      ir_status         true | false
+      motion_status     true | false
+      fall_status       idle | freefall | impact | fallen
+      temperature       number, degrees C
+      humidity          number, percent
+      safety_status     ok | warning | alarm          (for ALL)
+
+  Any predicate left unset falls to the default branch and Genie says it
+  cannot read that sensor, rather than saying nothing.
+-->
+
+<aiml version="2.0">
+
+    <!-- ====================================================== -->
+    <!--                    MQ-2 SMOKE SENSOR                   -->
+    <!-- ====================================================== -->
+
+    <category>
+        <pattern>CHECK SMOKE SENSOR</pattern>
+        <template><think><set name="sensor">SMOKE</set></think></template>
+    </category>
+
+    <category><pattern>I THINK SOMEONE IS SMOKING</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>SOMEONE IS SMOKING</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS SOMEONE SMOKING</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>DO YOU THINK SOMEONE IS SMOKING</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>I THINK THERE IS SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>I SMELL SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>DO YOU SMELL SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>CAN YOU SMELL SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>DO YOU DETECT SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>CAN YOU DETECT SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THERE SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THERE ANY SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>CHECK FOR SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>CHECK FOR GAS</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THERE GAS</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THERE ANY GAS</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>DO YOU DETECT GAS</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>CAN YOU SMELL GAS</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>DO YOU SMELL GAS</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THERE A GAS LEAK</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>I THINK THERE IS A GAS LEAK</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THE AIR SAFE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THE AIR CLEAN</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>HOW IS THE AIR QUALITY</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THE AIR QUALITY GOOD</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>CAN YOU SMELL ANYTHING</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THE AIR OK</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>ANY SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>CHECK THE AIR</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THERE SMOKE IN THE ROOM</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>THERE IS SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>THERE IS GAS</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>THERE IS A GAS LEAK</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>I CAN SMELL SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>I CAN SMELL GAS</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>SOMETHING SMELLS LIKE GAS</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IT SMELLS LIKE SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THERE A GAS</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THERE A SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THERE A SMOKE IN THE ROOM</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>IS THERE GAS LEAK</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>THE SMOKE SENSOR</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>SMOKE SENSOR</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>THE GAS SENSOR</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>GAS SENSOR</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>THE SMOKE DETECTOR</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>SMOKE DETECTOR</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>SMOKE</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+    <category><pattern>GAS</pattern>
+        <template><srai>CHECK SMOKE SENSOR</srai></template></category>
+
+    <!-- ====================================================== -->
+    <!--                     FLAME SENSOR                       -->
+    <!--  NEW. Fire questions belong here, not on the MQ-2.     -->
+    <!-- ====================================================== -->
+
+    <category>
+        <pattern>CHECK FLAME SENSOR</pattern>
+        <template><think><set name="sensor">FLAME</set></think></template>
+    </category>
+
+    <category><pattern>IS THERE A FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>I THINK THERE IS A FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>DO YOU THINK THERE IS A FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>IS SOMETHING BURNING</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>IS ANYTHING BURNING</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>DO YOU SEE A FLAME</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>CAN YOU SEE A FLAME</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>DO YOU DETECT A FLAME</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>DO YOU DETECT FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>IS THERE A FLAME</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>CHECK FOR FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>CHECK FOR FLAME</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>IS THE STOVE ON</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>DID I LEAVE THE STOVE ON</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>IS SOMETHING ON FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>DO YOU SEE FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>ANY FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>IS THE ROOM ON FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>DO YOU DETECT A FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>THERE IS A FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>THERE IS A FLAME</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>SOMETHING IS BURNING</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>I CAN SEE FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>IT SMELLS LIKE BURNING</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>DO YOU SEE FLAME</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>IS THERE FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>IS THERE FLAME</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>THE FLAME SENSOR</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>FLAME SENSOR</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>THE FIRE SENSOR</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>FIRE SENSOR</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>THE FLAME DETECTOR</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>FLAME</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+    <category><pattern>FIRE</pattern>
+        <template><srai>CHECK FLAME SENSOR</srai></template></category>
+
+    <!-- ====================================================== -->
+    <!--                       IR SENSOR                        -->
+    <!-- ====================================================== -->
+
+    <category>
+        <pattern>CHECK IR SENSOR</pattern>
+        <template><think><set name="sensor">IR</set></think></template>
+    </category>
+
+    <category><pattern>IS SOMEONE THERE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS ANYONE THERE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS ANYBODY THERE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>DO YOU SEE SOMEONE</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>CAN YOU SEE SOMEONE</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>DO YOU SEE ANYONE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>CAN YOU SEE ANYONE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>DO YOU SEE ANYTHING</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>CAN YOU SEE ANYTHING</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>DO YOU DETECT SOMEONE</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>DO YOU DETECT ANYONE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>DO YOU DETECT ANYTHING</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>DO YOU DETECT AN OBJECT</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS THERE SOMETHING IN FRONT OF YOU</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+
+    <!-- ====================================================== -->
+    <!--        DISTANCE  -  the 4x VL53L1X ToF array           -->
+    <!-- ====================================================== -->
+    <!--
+      Added 26-08-2026 with the ToF array. The IR categories above answer
+      "is something there"; these answer "how far, and which way", which
+      an IR gate could never do and four ToF sensors can.
+
+      Predicates ai.py sets:
+          distance        nearest valid reading, millimetres
+          distance_side   front | left | right | rear
+    -->
+
+    <category>
+        <pattern>CHECK DISTANCE SENSOR</pattern>
+        <template><think><set name="sensor">DISTANCE</set></think></template>
+    </category>
+
+    <!-- ====================================================== -->
+    <!--   PRESENCE  -  is anyone in the ROOM (any ToF side)    -->
+    <!-- ====================================================== -->
+    <!--
+      Separate from MOTION on purpose. MOTION below is about the UNIT
+      being moved; this is about a PERSON being nearby. Answering one
+      with the other had GENIE saying "I felt a change in my position"
+      because somebody walked past it.
+
+      Separate from IR too: IR is the front sensor only, this is any of
+      the four.
+    -->
+
+    <category>
+        <pattern>CHECK PRESENCE SENSOR</pattern>
+        <template><think><set name="sensor">PRESENCE</set></think></template>
+    </category>
+
+    <category><pattern>IS ANYONE IN THE ROOM</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS SOMEONE IN THE ROOM</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS ANYBODY IN THE ROOM</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS ANYONE HERE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS SOMEONE HERE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS ANYONE AROUND</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS ANYBODY AROUND</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>ARE WE ALONE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS THE ROOM EMPTY</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>CHECK THE ROOM</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>CHECK FOR PEOPLE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>CHECK PRESENCE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+
+    <category><pattern>HOW FAR</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>HOW FAR AWAY</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>HOW FAR AWAY IS IT</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>HOW FAR IS IT</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>HOW FAR AM I</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>HOW FAR AWAY AM I</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>HOW CLOSE IS IT</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>HOW CLOSE AM I</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>WHAT IS THE DISTANCE</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>CHECK THE DISTANCE</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>CHECK DISTANCE</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>WHICH SIDE</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>WHICH DIRECTION</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>WHERE IS IT</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>WHERE AM I</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>WHAT IS NEAREST</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>WHAT IS THE NEAREST OBJECT</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>IS ANYTHING CLOSE</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>IS ANYONE CLOSE</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>IS SOMETHING NEAR ME</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>IS ANYTHING NEAR YOU</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>HOW NEAR IS SOMETHING</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>WHICH SIDE IS IT ON</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>WHICH DIRECTION IS IT</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>WHAT SIDE IS IT ON</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>HOW NEAR IS IT</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>THE DISTANCE SENSOR</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>DISTANCE SENSOR</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>THE DISTANCE SENSORS</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>DISTANCE</pattern>
+        <template><srai>CHECK DISTANCE SENSOR</srai></template></category>
+    <category><pattern>IS SOMEONE IN FRONT OF YOU</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS THERE AN OBJECT IN FRONT OF YOU</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS THERE SOMETHING THERE</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS ANYTHING BLOCKING YOU</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS YOUR PATH BLOCKED</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>CHECK FOR AN OBJECT</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS ANYONE IN FRONT OF YOU</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS ANYTHING IN FRONT OF YOU</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS SOMETHING IN FRONT OF YOU</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS THE WAY CLEAR</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS THE PATH CLEAR</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>CAN YOU SEE ANYTHING IN FRONT</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS THERE ANYTHING AHEAD</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>WHAT IS IN FRONT OF YOU</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS ANYTHING AHEAD</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>IS ANYONE AHEAD</pattern>
+        <template><srai>CHECK IR SENSOR</srai></template></category>
+    <category><pattern>CHECK FOR SOMEONE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>CHECK YOUR SURROUNDINGS</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>AM I ALONE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS ANYBODY HERE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>CAN YOU SENSE ANYONE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>CAN YOU SENSE ANYBODY</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS ANYONE NEARBY</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>IS SOMEBODY NEARBY</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>CHECK THE PRESENCE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>THE PRESENCE SENSOR</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>PRESENCE SENSOR</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+    <category><pattern>PRESENCE</pattern>
+        <template><srai>CHECK PRESENCE SENSOR</srai></template></category>
+
+    <!-- ====================================================== -->
+    <!--              MPU-6050  -  GENERAL MOTION               -->
+    <!-- ====================================================== -->
+
+    <category>
+        <pattern>CHECK MOTION SENSOR</pattern>
+        <template><think><set name="sensor">MOTION</set></think></template>
+    </category>
+
+    <category><pattern>DID YOU MOVE</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>HAVE YOU MOVED</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>HAS ANYTHING MOVED YOU</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>HAS SOMEONE MOVED YOU</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>ARE YOU MOVING</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>ARE YOU STILL</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>CHECK FOR MOVEMENT</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>DID SOMETHING MOVE</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>HAS ANYTHING MOVED</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>DID YOU SHAKE</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>ARE YOU SHAKING</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>DID SOMETHING SHAKE</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>DID YOU FEEL A SHAKE</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>ARE YOU TILTED</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>DID YOU TILT</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>HAS YOUR POSITION CHANGED</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>HAS YOUR ORIENTATION CHANGED</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>ARE YOU UPRIGHT</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>HAS SOMEONE PICKED YOU UP</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>HAVE YOU BEEN PICKED UP</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>DID SOMEONE PICK YOU UP</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>ARE YOU STABLE</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>ARE YOU STEADY</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>IS EVERYTHING STABLE</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>HAVE YOU BEEN MOVED</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>WERE YOU MOVED</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>THE MOTION SENSOR</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>MOTION SENSOR</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+    <category><pattern>MOTION</pattern>
+        <template><srai>CHECK MOTION SENSOR</srai></template></category>
+
+    <!-- ====================================================== -->
+    <!--            MPU-6050  -  FALL DETECTION                 -->
+    <!--  NEW. A fall is a safety event. "Did you move" is not. -->
+    <!-- ====================================================== -->
+
+    <category>
+        <pattern>CHECK FALL SENSOR</pattern>
+        <template><think><set name="sensor">FALL</set></think></template>
+    </category>
+
+    <category><pattern>DID SOMEONE FALL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>HAS SOMEONE FALLEN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>DID ANYONE FALL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>DID I FALL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>DID YOU FALL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>DID YOU DETECT A FALL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>CHECK FOR A FALL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>IS ANYONE HURT</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>IS EVERYONE OK</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>DID SOMETHING HAPPEN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+
+    <!-- ====================================================== -->
+    <!--                  DHT11 TEMPERATURE                     -->
+    <!-- ====================================================== -->
+
+    <category>
+        <pattern>CHECK TEMPERATURE</pattern>
+        <template><think><set name="sensor">TEMPERATURE</set></think></template>
+    </category>
+
+    <category><pattern>WHAT IS THE TEMPERATURE</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>WHAT IS THE CURRENT TEMPERATURE</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>WHAT IS THE ROOM TEMPERATURE</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>WHAT IS THE TEMPERATURE RIGHT NOW</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>HOW HOT IS IT</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>HOW COLD IS IT</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>IS IT HOT</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>IS IT COLD</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>IS THE ROOM HOT</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>IS THE ROOM COLD</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>HOW WARM IS IT</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>HOW COOL IS IT</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>CAN YOU TELL ME THE TEMPERATURE</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>TELL ME THE TEMPERATURE</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>CHECK THE TEMPERATURE</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>WHAT DOES THE TEMPERATURE LOOK LIKE</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>IS IT GETTING HOT</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>IS IT GETTING COLD</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+
+    <!-- ====================================================== -->
+    <!--                   DHT11 HUMIDITY                       -->
+    <!-- ====================================================== -->
+
+    <category>
+        <pattern>CHECK HUMIDITY</pattern>
+        <template><think><set name="sensor">HUMIDITY</set></think></template>
+    </category>
+
+    <category><pattern>WHAT IS THE HUMIDITY</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>WHAT IS THE CURRENT HUMIDITY</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>WHAT IS THE HUMIDITY RIGHT NOW</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>HOW HUMID IS IT</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>IS IT HUMID</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>IS THE AIR HUMID</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>IS THE ROOM HUMID</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>HOW DRY IS IT</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>IS IT DRY</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>IS THE AIR DRY</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>HOW MOIST IS THE AIR</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>CAN YOU TELL ME THE HUMIDITY</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>TELL ME THE HUMIDITY</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>CHECK THE HUMIDITY</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>IS THE WEATHER HUMID</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>DOES IT FEEL HUMID</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>IS IT DAMP</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>THE HUMIDITY</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+    <category><pattern>HUMIDITY</pattern>
+        <template><srai>CHECK HUMIDITY</srai></template></category>
+
+    <!-- "what is the weather" wants both numbers, so route it to ALL -->
+    <category><pattern>WHAT IS THE WEATHER</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>WHAT IS THE WEATHER TODAY</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>HOW IS THE WEATHER</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+
+    <!-- ====================================================== -->
+    <!--            SW-420 VIBRATION  -  KNOCK / TAP            -->
+    <!-- ====================================================== -->
+
+    <category>
+        <pattern>CHECK KNOCK SENSOR</pattern>
+        <template><think><set name="sensor">KNOCK</set></think></template>
+    </category>
+
+    <category><pattern>IS ANYONE KNOCKING</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>IS SOMEONE KNOCKING</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>IS SOMEBODY KNOCKING</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>DID SOMEONE KNOCK</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>DID SOMEBODY KNOCK</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>DID ANYONE KNOCK</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>HAS ANYONE KNOCKED</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>DID YOU FEEL A KNOCK</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>DID YOU FEEL A TAP</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>ARE YOU BEING TAPPED</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>IS SOMEONE AT THE DOOR</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>IS THERE SOMEONE AT THE DOOR</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>HOW MANY KNOCKS</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>HOW MANY TAPS</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>HOW MANY TIMES HAVE YOU BEEN TAPPED</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>CHECK THE VIBRATION SENSOR</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>CHECK VIBRATION</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>ANY KNOCKS</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>DID YOU HEAR A KNOCK</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>WAS THERE A KNOCK</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>SOMEONE IS AT THE DOOR</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>SOMEBODY IS AT THE DOOR</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>THERE IS A KNOCK</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>CHECK THE VIBRATION</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>THE VIBRATION SENSOR</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>VIBRATION SENSOR</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>THE KNOCK SENSOR</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>KNOCK SENSOR</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+    <category><pattern>VIBRATION</pattern>
+        <template><srai>CHECK KNOCK SENSOR</srai></template></category>
+
+    <!-- ====================================================== -->
+    <!--              OVERALL STATUS  -  ALL SENSORS            -->
+    <!-- ====================================================== -->
+
+    <category>
+        <pattern>CHECK EVERYTHING</pattern>
+        <template><think><set name="sensor">ALL</set></think></template>
+    </category>
+
+    <category><pattern>IS EVERYTHING OK</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>IS EVERYTHING SAFE</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>IS THE ROOM SAFE</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>IS EVERYTHING ALRIGHT</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>ARE WE SAFE</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>ARE THINGS OK</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>WHAT IS YOUR STATUS</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>STATUS REPORT</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>CHECK ALL SENSORS</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>HOW ARE THE SENSORS</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>GIVE ME A REPORT</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>HOW IS THE ROOM</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+    <category><pattern>CHECK ALL THE SENSORS</pattern>
+        <template><srai>CHECK EVERYTHING</srai></template></category>
+
+    <!-- ====================================================== -->
+    <!--                COMMON SENSOR RESPONSE                  -->
+    <!--                                                        -->
+    <!--  Every <condition> ends with a bare <li> default. That -->
+    <!--  is not decoration: without it, an unset predicate      -->
+    <!--  makes AIML return an empty string and Genie says       -->
+    <!--  nothing at all, which reads as a crash.                -->
+    <!-- ====================================================== -->
+
+    <category>
+        <pattern>CHECK SENSOR</pattern>
+        <template>
+            <condition name="sensor">
+
+                <!-- ================= SMOKE ================= -->
+                <li value="SMOKE">
+                    <condition name="smoke_status">
+                        <li value="alarm">
+                            <random>
+                                <li>Gas alarm. The reading is well above normal - please check the room now.</li>
+                                <li>I am detecting a high level of gas or smoke. Please check immediately.</li>
+                                <li>Warning. Smoke levels are high enough to be a concern.</li>
+                            </random>
+                        </li>
+                        <li value="elevated">
+                            <random>
+                                <li>Smoke is slightly elevated, but not at alarm level yet.</li>
+                                <li>I am reading a little more smoke than usual. Worth keeping an eye on.</li>
+                                <li>Air quality has dipped slightly. Nothing serious so far.</li>
+                            </random>
+                        </li>
+                        <li value="clear">
+                            <random>
+                                <li>No, I do not detect any smoke. The air is clear.</li>
+                                <li>The air appears clear.</li>
+                                <li>No signs of smoke or gas at the moment.</li>
+                            </random>
+                        </li>
+                        <!-- boolean values, so the original ai.py still works -->
+                        <li value="true">
+                            <random>
+                                <li>Yes, I detect smoke nearby.</li>
+                                <li>Smoke has been detected.</li>
+                            </random>
+                        </li>
+                        <li value="false">
+                            <random>
+                                <li>No, I do not detect any smoke.</li>
+                                <li>The air appears clear.</li>
+                            </random>
+                        </li>
+                        <li>I cannot read the smoke sensor right now. It may not be connected.</li>
+                    </condition>
+                </li>
+
+                <!-- ================= FLAME ================= -->
+                <li value="FLAME">
+                    <condition name="flame_status">
+                        <li value="alarm">
+                            <random>
+                                <li>Fire alarm. I am detecting a strong flame signature nearby.</li>
+                                <li>Warning, I detect what looks like a fire. Please check immediately.</li>
+                            </random>
+                        </li>
+                        <li value="detected">
+                            <random>
+                                <li>I detect an infrared source nearby. It may be a flame, or it may be a lamp or sunlight.</li>
+                                <li>Something warm or bright is in front of me. I cannot be certain it is a fire.</li>
+                            </random>
+                        </li>
+                        <li value="clear">
+                            <random>
+                                <li>No flame detected. Everything looks clear.</li>
+                                <li>I do not see any sign of fire.</li>
+                                <li>No fire detected nearby.</li>
+                            </random>
+                        </li>
+                        <li value="true">Yes, I detect a flame nearby.</li>
+                        <li value="false">No flame detected.</li>
+                        <li>I cannot read the flame sensor right now. It may not be connected.</li>
+                    </condition>
+                </li>
+
+                <!-- ================= IR ================= -->
+                <li value="IR">
+                    <condition name="ir_status">
+                        <li value="true">
+                            <random>
+                                <li>Yes, I detect something in front of me.</li>
+                                <li>There appears to be someone nearby.</li>
+                                <li>I can sense something ahead.</li>
+                                <li>Something is present in front of me.</li>
+                            </random>
+                        </li>
+                        <li value="false">
+                            <random>
+                                <li>I do not detect anything nearby.</li>
+                                <li>The area in front of me is clear.</li>
+                                <li>Nothing appears to be in front of me.</li>
+                            </random>
+                        </li>
+                        <li>I cannot read the presence sensor right now.</li>
+                    </condition>
+                </li>
+
+                <!-- ================= MOTION ================= -->
+                <li value="MOTION">
+                    <condition name="motion_status">
+                        <li value="true">
+                            <random>
+                                <li>Yes, I have been moved.</li>
+                                <li>I felt a change in my position.</li>
+                                <li>Something moved me recently.</li>
+                            </random>
+                        </li>
+                        <li value="false">
+                            <random>
+                                <li>No movement has been detected. I have remained still.</li>
+                                <li>Everything appears stable.</li>
+                                <li>I do not sense any motion.</li>
+                            </random>
+                        </li>
+                        <li>I cannot read the motion sensor right now.</li>
+                    </condition>
+                </li>
+
+                <!-- ================= FALL ================= -->
+                <li value="FALL">
+                    <condition name="fall_status">
+                        <li value="fallen">
+                            <random>
+                                <li>Yes. I detected a fall and there has been no movement since. Please check on them.</li>
+                                <li>A fall was detected. Someone may need help right now.</li>
+                            </random>
+                        </li>
+                        <li value="impact">
+                            <random>
+                                <li>I detected a sudden impact. I am checking whether someone has fallen.</li>
+                                <li>Something hit the ground hard. Give me a moment to confirm.</li>
+                            </random>
+                        </li>
+                        <li value="freefall">I am sensing a sudden drop right now.</li>
+                        <li value="idle">
+                            <random>
+                                <li>No fall detected. Everything seems fine.</li>
+                                <li>Nobody has fallen. All is well.</li>
+                                <li>No fall events so far.</li>
+                            </random>
+                        </li>
+                        <li>I cannot read the fall detector right now. It may not be connected.</li>
+                    </condition>
+                </li>
+
+                <!-- ================= PRESENCE ================= -->
+                <li value="PRESENCE">
+                    <condition name="presence_status">
+                        <li value="true">
+                            <random>
+                                <li>Yes, there is someone nearby.</li>
+                                <li>I can sense somebody in the room.</li>
+                                <li>Someone is close by.</li>
+                            </random>
+                        </li>
+                        <li value="false">
+                            <random>
+                                <li>I do not sense anyone in the room.</li>
+                                <li>The room seems empty from where I am.</li>
+                                <li>Nobody is within range of my sensors.</li>
+                            </random>
+                        </li>
+                        <li>I cannot check the room right now. My distance sensors are not reporting.</li>
+                    </condition>
+                </li>
+
+                <!-- ================= DISTANCE ================= -->
+                <li value="DISTANCE">
+                    <condition name="distance">
+                        <!-- value="" is an unset predicate: no valid reading
+                             from any of the four sensors, or Node 2 is not
+                             reporting at all. Say so rather than saying
+                             "nothing is nearby". Those are different
+                             answers and only one of them is honest. -->
+                        <li value="">I cannot read the distance sensors right now. They may not be connected.</li>
+                        <li>
+                            <random>
+                                <li>The nearest thing is about <get name="distance"/> centimetres away, <get name="distance_side"/>.</li>
+                                <li>I read something about <get name="distance"/> centimetres away, <get name="distance_side"/>.</li>
+                                <li>There is something roughly <get name="distance"/> centimetres <get name="distance_side"/>.</li>
+                            </random>
+                        </li>
+                    </condition>
+                </li>
+
+                <!-- ================= TEMPERATURE ================= -->
+                <li value="TEMPERATURE">
+                    <condition name="temperature">
+                        <!-- value="" matches an unset or cleared predicate.
+                             A condition may have only ONE bare default <li>,
+                             and it must be last, or the first one swallows
+                             every case and Genie replies with nothing. -->
+                        <li value="">I cannot read the temperature sensor right now. It may not be connected.</li>
+                        <li>
+                            <random>
+                                <li>The current temperature is <get name="temperature"/> degrees Celsius.</li>
+                                <li>I am reading <get name="temperature"/> degrees Celsius.</li>
+                                <li>It is currently <get name="temperature"/> degrees Celsius.</li>
+                            </random>
+                        </li>
+                    </condition>
+                </li>
+
+                <!-- ================= HUMIDITY ================= -->
+                <li value="HUMIDITY">
+                    <condition name="humidity">
+                        <li value="">I cannot read the humidity sensor right now. It may not be connected.</li>
+                        <li>
+                            <random>
+                                <li>The current humidity is <get name="humidity"/> percent.</li>
+                                <li>The air humidity is currently <get name="humidity"/> percent.</li>
+                                <li>Humidity around me is <get name="humidity"/> percent.</li>
+                            </random>
+                        </li>
+                    </condition>
+                </li>
+
+                <!-- ================= KNOCK ================= -->
+                <!-- The COUNT is the real answer here, not the flag. KNOCK
+                     is only true for 2.5 seconds after a tap, so a poll that
+                     lands a moment late reads false on a door somebody is
+                     hammering. A lifetime counter cannot be missed that way,
+                     so the "false" branch still reports it. -->
+                <li value="KNOCK">
+                    <condition name="knock_status">
+                        <li value="true">
+                            <random>
+                                <li>Yes, I just felt a tap. That makes <get name="knock_count"/> since I started.</li>
+                                <li>Somebody is knocking. I have counted <get name="knock_count"/> taps so far.</li>
+                                <li>I am being tapped right now. <get name="knock_count"/> taps in total.</li>
+                            </random>
+                        </li>
+                        <li value="false">
+                            <condition name="knock_count">
+                                <li value="">Nothing is tapping me at the moment.</li>
+                                <li value="0">
+                                    <random>
+                                        <li>Nobody has knocked since I started.</li>
+                                        <li>No taps at all so far.</li>
+                                    </random>
+                                </li>
+                                <li>
+                                    <random>
+                                        <li>Nothing right now, though I have felt <get name="knock_count"/> taps since I started.</li>
+                                        <li>No knock at the moment. <get name="knock_count"/> taps in total so far.</li>
+                                    </random>
+                                </li>
+                            </condition>
+                        </li>
+                        <li>I cannot read the vibration sensor right now. It may not be connected.</li>
+                    </condition>
+                </li>
+
+                <!-- ================= ALL ================= -->
+                <li value="ALL">
+                    <condition name="safety_status">
+                        <li value="alarm">
+                            It is <condition name="temperature"><li value="">an unreadable temperature</li><li><get name="temperature"/> degrees</li></condition> and <condition name="humidity"><li value="">unreadable humidity</li><li><get name="humidity"/> percent humidity</li></condition>,
+                            but there is a safety alarm active. Please check the room immediately.
+                        </li>
+                        <li value="warning">
+                            It is <condition name="temperature"><li value="">an unreadable temperature</li><li><get name="temperature"/> degrees</li></condition> and <condition name="humidity"><li value="">unreadable humidity</li><li><get name="humidity"/> percent humidity</li></condition>.
+                            One of my safety sensors is slightly elevated, so I am keeping watch.
+                        </li>
+                        <li value="ok">
+                            <random>
+                                <li>Everything looks fine. It is <condition name="temperature"><li value="">an unreadable temperature</li><li><get name="temperature"/> degrees</li></condition> and <condition name="humidity"><li value="">unreadable humidity</li><li><get name="humidity"/> percent humidity</li></condition>, and no smoke, fire or falls detected.</li>
+                                <li>All clear. <condition name="temperature"><li value="">an unreadable temperature</li><li><get name="temperature"/> degrees</li></condition>, <condition name="humidity"><li value="">unreadable humidity</li><li><get name="humidity"/> percent humidity</li></condition>, and all safety sensors are normal.</li>
+                            </random>
+                        </li>
+                        <li>
+                            It is <condition name="temperature"><li value="">an unreadable temperature</li><li><get name="temperature"/> degrees</li></condition> and <condition name="humidity"><li value="">unreadable humidity</li><li><get name="humidity"/> percent humidity</li></condition>.
+                            I do not have a full safety reading right now.
+                        </li>
+                    </condition>
+                </li>
+
+                <!-- unknown sensor name -->
+                <li>I am not sure which sensor you mean. You can ask about temperature, humidity, smoke, fire, movement, falls, or whether anyone is nearby.</li>
+            </condition>
+        </template>
+    </category>
+
+    <!-- Added: exact phrasings observed failing in a live session -->
+    <!-- word order variant of the existing HOW HOT IS IT category -->
+    <category>
+        <pattern>HOW HOT IT IS</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template>
+    </category>
+    <category><pattern>IS IT WARM</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>WHAT IS THE TEMP</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>IS IT COOL</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>THE TEMPERATURE</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+    <category><pattern>TEMPERATURE</pattern>
+        <template><srai>CHECK TEMPERATURE</srai></template></category>
+
+    <!-- singular "sensor" variants of the existing CHECK ALL SENSORS category -->
+    <category>
+        <pattern>CHECK ALL SENSOR</pattern>
+        <template><srai>CHECK ALL SENSORS</srai></template>
+    </category>
+
+    <category>
+        <pattern>CHECK FOR ALL SENSOR</pattern>
+        <template><srai>CHECK ALL SENSORS</srai></template>
+    </category>
+
+    <category>
+        <pattern>CHECK FOR ALL SENSORS</pattern>
+        <template><srai>CHECK ALL SENSORS</srai></template>
+    </category>
+
+    <!-- "the fall sensor" variant of the existing CHECK FALL SENSOR category -->
+    <category>
+        <pattern>CHECK THE FALL SENSOR</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+
+    <!-- Added 27-08-2026 after asking these out loud against live data.
+         "HAS SOMEONE FALLEN" was covered and "HAS ANYONE FALLEN" was not.
+         AIML matches whole patterns, so near-synonyms are not free, and a
+         fall is the one question this device exists to answer. -->
+    <category>
+        <pattern>HAS ANYONE FALLEN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+    <category>
+        <pattern>HAS ANYBODY FALLEN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+    <category>
+        <pattern>HAS ANYONE FALLEN DOWN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+    <category>
+        <pattern>DID ANYBODY FALL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+    <category>
+        <pattern>HAS THERE BEEN A FALL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+    <category>
+        <pattern>WAS THERE A FALL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+    <category>
+        <pattern>IS ANYONE ON THE FLOOR</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+    <category>
+        <pattern>DID ANYONE FALL DOWN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+    <category>
+        <pattern>DID SOMEONE FALL DOWN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+    <category>
+        <pattern>ARE YOU OK</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+    <category>
+        <pattern>IS ANYONE INJURED</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template>
+    </category>
+    <category><pattern>HAVE YOU FALLEN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>HAVE I FALLEN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>DID SOMEBODY FALL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>DID YOU FALL OVER</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>SOMEONE HAS FALLEN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>SOMEBODY HAS FALLEN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>SOMEONE FELL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>I FELL</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>I HAVE FALLEN</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>THE FALL SENSOR</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>FALL SENSOR</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>THE FALL DETECTOR</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+    <category><pattern>FALL DETECTOR</pattern>
+        <template><srai>CHECK FALL SENSOR</srai></template></category>
+
+    <!-- ====================================================== -->
+    <!--          HANDLING REACTIONS  -  unprompted             -->
+    <!--                                                        -->
+    <!--  Everything else in this file answers a question.      -->
+    <!--  These are the only lines Genie says when nobody       -->
+    <!--  asked: the IMU noticed it was shoved or picked up      -->
+    <!--  (handling_fsm.py on the face board) and reaction_watch -->
+    <!--  turns that into speech.                                -->
+    <!--                                                        -->
+    <!--  They live here rather than in Python so every word     -->
+    <!--  Genie speaks stays in one file, and so each one gets    -->
+    <!--  a <random> set. A device that says the exact same      -->
+    <!--  sentence every single time it is nudged stops reading   -->
+    <!--  as aware and starts reading as a doorbell.             -->
+    <!-- ====================================================== -->
+
+    <category>
+        <pattern>REACTION EVENT</pattern>
+        <template>
+            <condition name="reaction">
+
+                <li value="pushed">
+                    <random>
+                        <li>Hey. Why are you pushing me?</li>
+                        <li>Please stop pushing me.</li>
+                        <li>Ouch. That was a bit rough.</li>
+                        <li>I felt that. Please be gentle.</li>
+                    </random>
+                </li>
+
+                <li value="shaken">
+                    <random>
+                        <li>Please stop shaking me.</li>
+                        <li>I am already off the ground. Shaking me does not help.</li>
+                        <li>Steady, please. You are shaking me.</li>
+                    </random>
+                </li>
+
+                <li value="lifted">
+                    <random>
+                        <li>Hey, put me down please.</li>
+                        <li>I have been picked up. Please put me back.</li>
+                        <li>Am I going somewhere? Please put me down.</li>
+                    </random>
+                </li>
+
+                <li value="still_lifted">
+                    <random>
+                        <li>I am still in the air. Please put me down.</li>
+                        <li>Still holding me. I would rather be on a table.</li>
+                        <li>Please set me down somewhere flat.</li>
+                    </random>
+                </li>
+
+                <li value="set_down">
+                    <random>
+                        <li>Thank you. That is better.</li>
+                        <li>Much better. Thank you.</li>
+                        <li>Back on solid ground. Thank you.</li>
+                    </random>
+                </li>
+
+                <!-- Bare default, last, as everywhere else in this file:
+                     an unknown reaction name must produce silence that the
+                     caller can detect, never an empty string it might
+                     hand to the speaker. -->
+                <li></li>
+            </condition>
+        </template>
+    </category>
+
+</aiml>

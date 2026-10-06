@@ -1,0 +1,55 @@
+# GENIE - laptop pipeline dependencies
+#
+#   python -m venv .venv
+#   .venv\Scripts\activate
+#   pip install -r requirements.txt
+#
+# Developed on Windows 11 with Python 3.14.3, but USE PYTHON 3.13 on a new
+# machine. Every package below has a ready-made Windows binary for 3.11,
+# 3.12 and 3.13. On 3.14 one of them (webrtcvad-wheels) has no binary and
+# pip tries to compile it, which needs MS Visual C++ Build Tools.
+# Versions are pinned to the ones this project was built and demonstrated on.
+# Remove the "==" pins only if a package will not install on your Python.
+
+# --- web / API layer -------------------------------------------------
+fastapi==0.140.13
+uvicorn[standard]==0.52.0
+pydantic==2.13.4
+python-multipart==0.0.32
+requests==2.34.2
+
+# --- speech in -------------------------------------------------------
+faster-whisper==1.2.1       # Whisper STT. Downloads its ~142 MB model on
+                            # FIRST RUN - needs internet once. See the guide.
+openwakeword==0.6.0         # "Hey Genie". Its feature models ship inside
+                            # the package - nothing extra to download.
+onnxruntime==1.28.0         # runs both .onnx models above
+
+# webrtcvad-wheels, NOT webrtcvad.
+#
+# They are the same library and both import as "webrtcvad". The plain
+# package is source-only: installing it on Windows compiles C code and
+# fails unless Microsoft Visual C++ Build Tools are installed. The
+# -wheels build ships prebuilt binaries and just works.
+webrtcvad-wheels==2.0.14
+
+# --- speech out ------------------------------------------------------
+piper-tts==1.6.0            # voice file is in piper_voices/, already included
+
+# --- intent ----------------------------------------------------------
+aiml.py==0.9.2              # AIML kernel for sensor.aiml + relay.aiml
+
+# --- hardware links --------------------------------------------------
+pyserial==3.5               # face board over USB, and the A7670E modem
+
+# --- numerics --------------------------------------------------------
+numpy==2.5.1
+
+# --- OPTIONAL --------------------------------------------------------
+# Only needed to RETRAIN the handling model (har_train.py). The pipeline
+# runs fine without it - har_model.py is already trained and included.
+# scikit-learn==1.9.0
+
+# NOT INSTALLED BY PIP - see SETUP_GUIDE.md:
+#   Ollama + the mistral model (4.4 GB)  ->  ollama pull mistral
+#   Thonny                               ->  only to flash the ESP32 boards

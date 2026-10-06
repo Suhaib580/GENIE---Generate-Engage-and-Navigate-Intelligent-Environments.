@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# the offline wheel bundle is built on demand, not committed
+wheels/
+GENIE_wheels/
+
+# models downloaded on first run, not stored here
+*.bin
+.cache/
+
+# Windows / editor noise
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# local overrides of the committed config
+config_local.py
+settings_local.py
+
+# ---------------------------------------------------------------------
+# Kept locally, deliberately NOT published.
+# ---------------------------------------------------------------------
+# Internal university paperwork - not part of the engineering record.
+Final Approval/
+Similarity Report/
+
+# Editable sources. The committed PDFs render inline on GitHub; .docx and
+# .pptx only offer a download button, which is why they are not tracked.
+*.docx
+*.pptx
+
+# Demo videos do not play inline on GitHub either - they are linked from
+# the README instead. 27 MB of non-viewable binaries is not worth the clone.
+Running Demo Videos/
+
+# Wake-word training clips. Removed deliberately: they are 969 recordings of
+# five named people's voices, which does not belong in a public repository.
+# The trained model (hey_genie.onnx) is committed; the audio is not.
+**/ww_raw/
+**/ww_wav/
+**/ww_clean/
+**/ww_positives/
+**/wakeword_raw/
+
+# The Piper voice is a 61 MB third-party asset, freely downloadable from the
+# Piper project. SETUP_GUIDE.md Part B says where to get it. Keeping it out
+# takes this repo from 67 MB to 7 MB.
+piper_voices/
+
+# Slide decks live with the report submission, not in the code repository.
+Presentation/

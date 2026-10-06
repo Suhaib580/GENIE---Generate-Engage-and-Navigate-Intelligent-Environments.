@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<aiml version="2.0">
+
+    <!-- ========================================= -->
+    <!-- EMERGENCY TRIGGER
+         Deliberately simple literal phrases, no wildcards at all;
+         this is the most safety-critical path in the whole system, so
+         it uses the plainest possible matching given the wildcard bugs
+         already found in this library elsewhere. Add more exact
+         phrases here if a real phrasing doesn't match; don't add
+         wildcards to "catch more", that's exactly the pattern shape
+         that's been unreliable. -->
+    <!-- ========================================= -->
+
+    <category>
+        <pattern>EMERGENCY</pattern>
+        <template>
+            <think><set name="emergency_triggered">TRUE</set></think>
+            EMERGENCY_PENDING
+        </template>
+    </category>
+
+    <category>
+        <pattern>HELP ME</pattern>
+        <template>
+            <think><set name="emergency_triggered">TRUE</set></think>
+            EMERGENCY_PENDING
+        </template>
+    </category>
+
+    <category>
+        <pattern>CALL FOR HELP</pattern>
+        <template>
+            <think><set name="emergency_triggered">TRUE</set></think>
+            EMERGENCY_PENDING
+        </template>
+    </category>
+
+    <category>
+        <pattern>I NEED HELP</pattern>
+        <template>
+            <think><set name="emergency_triggered">TRUE</set></think>
+            EMERGENCY_PENDING
+        </template>
+    </category>
+
+    <category>
+        <pattern>THIS IS AN EMERGENCY</pattern>
+        <template>
+            <think><set name="emergency_triggered">TRUE</set></think>
+            EMERGENCY_PENDING
+        </template>
+    </category>
+
+    <category>
+        <pattern>CALL FOR EMERGENCY</pattern>
+        <template>
+            <think><set name="emergency_triggered">TRUE</set></think>
+            EMERGENCY_PENDING
+        </template>
+    </category>
+
+
+    <!-- ========================================= -->
+    <!-- TURN ON THE APPLIANCE -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>TURN * THE *</pattern>
+
+        <template>
+
+            <think>
+                <set name="command"><star index="1"/></set>
+                <set name="device"><star index="2"/></set>
+            </think>
+
+            <srai>FOLLOW COMMAND</srai>
+
+        </template>
+
+    </category>
+
+
+
+    <!-- ========================================= -->
+    <!-- TURN THE APPLIANCE ON -->
+    <!-- This pattern's tail ("LIGHT OFF") is captured as ONE wildcard,
+         not two adjacent ones, since aiml.py cannot reliably split two
+         bare wildcards sitting next to each other with nothing between
+         them, so the actual device/command split happens in Python
+         (see ai.py), then gets handed back to the proven-working
+         "TURN * THE *" phrasing below. -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>TURN THE *</pattern>
+
+        <template>
+
+            <srai>SPLIT TAIL <star/></srai>
+
+        </template>
+
+    </category>
+
+
+    <!-- ========================================= -->
+    <!-- PLEASE TURN ON THE APPLIANCE -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>* TURN * THE *</pattern>
+
+        <template>
+
+            <srai>
+                TURN <star index="2"/> THE <star index="3"/>
+            </srai>
+
+        </template>
+
+    </category>
+
+
+    <!-- ========================================= -->
+    <!-- PLEASE TURN THE APPLIANCE ON -->
+    <!-- Single trailing wildcard, same reasoning as TURN THE * above. -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>* TURN THE *</pattern>
+
+        <template>
+
+            <srai>SPLIT TAIL <star index="2"/></srai>
+
+        </template>
+
+    </category>
+
+
+    <!-- ========================================= -->
+    <!-- SWITCH ON THE APPLIANCE -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>SWITCH * THE *</pattern>
+
+        <template>
+
+            <srai>
+                TURN <star index="1"/> THE <star index="2"/>
+            </srai>
+
+        </template>
+
+    </category>
+
+
+    <category>
+
+        <pattern>SWITCH THE *</pattern>
+
+        <template>
+
+            <srai>SPLIT TAIL <star/></srai>
+
+        </template>
+
+    </category>
+
+
+    <!-- ========================================= -->
+    <!-- PLEASE SWITCH ON THE APPLIANCE -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>* SWITCH * THE *</pattern>
+
+        <template>
+
+            <srai>
+                TURN <star index="2"/> THE <star index="3"/>
+            </srai>
+
+        </template>
+
+    </category>
+
+
+    <!-- ========================================= -->
+    <!-- PLEASE SWITCH THE APPLIANCE ON -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>* SWITCH THE *</pattern>
+
+        <template>
+
+            <srai>SPLIT TAIL <star index="2"/></srai>
+
+        </template>
+
+    </category>
+
+
+    <!-- ========================================= -->
+    <!-- STATUS QUERIES ("is the fan on?", "what's the status")
+         Uses only proven-safe wildcard shapes given this library's
+         track record: single wildcard sandwiched between literals, or
+         a single trailing wildcard. No adjacent-double or leading
+         wildcards here.
+
+         The actual ON/OFF state isn't known to AIML at all; it lives
+         in api.py's memory. This just recognizes "a status was asked
+         about X" and records which device; ai.py detects this and the
+         real answer gets built in whisper_service.py after querying
+         api.py directly. -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>IS THE * ON</pattern>
+
+        <template>
+            <think><set name="query_device"><star/></set></think>
+            STATUS_PENDING
+        </template>
+
+    </category>
+
+
+    <category>
+
+        <pattern>IS THE * OFF</pattern>
+
+        <template>
+            <think><set name="query_device"><star/></set></think>
+            STATUS_PENDING
+        </template>
+
+    </category>
+
+
+    <category>
+
+        <pattern>IS * ON</pattern>
+
+        <template>
+            <think><set name="query_device"><star/></set></think>
+            STATUS_PENDING
+        </template>
+
+    </category>
+
+
+    <category>
+
+        <pattern>IS * OFF</pattern>
+
+        <template>
+            <think><set name="query_device"><star/></set></think>
+            STATUS_PENDING
+        </template>
+
+    </category>
+
+
+    <category>
+
+        <pattern>WHAT IS THE STATUS OF THE *</pattern>
+
+        <template>
+            <think><set name="query_device"><star/></set></think>
+            STATUS_PENDING
+        </template>
+
+    </category>
+
+
+    <category>
+
+        <pattern>STATUS OF THE *</pattern>
+
+        <template>
+            <think><set name="query_device"><star/></set></think>
+            STATUS_PENDING
+        </template>
+
+    </category>
+
+
+    <category>
+
+        <pattern>WHAT IS THE STATUS</pattern>
+
+        <template>
+            <think><set name="query_device">ALL</set></think>
+            STATUS_PENDING
+        </template>
+
+    </category>
+
+
+    <!-- ========================================= -->
+    <!-- SPLIT TAIL: the ONE place a two-word tail (e.g. "LIGHT OFF")
+         gets captured, as a single unambiguous wildcard. Python
+         (ai.py) reads raw_tail, splits it into device/command itself,
+         then re-feeds AIML the equivalent "TURN <command> THE <device>"
+         phrasing so the normal FOLLOW COMMAND confirmation still gets
+         generated exactly as it would for any other match. -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>SPLIT TAIL *</pattern>
+
+        <template>
+
+            <think>
+                <set name="raw_tail"><star/></set>
+            </think>
+
+            SPLIT_PENDING
+
+        </template>
+
+    </category>
+
+
+
+    <!-- ========================================= -->
+    <!-- TURN ON BOTH -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>TURN * BOTH</pattern>
+
+        <template>
+
+            <think>
+
+                <set name="command"><star/></set>
+
+                <set name="device">BOTH</set>
+
+            </think>
+
+            <srai>FOLLOW COMMAND</srai>
+
+        </template>
+
+    </category>
+
+
+    <category>
+
+        <pattern>TURN BOTH *</pattern>
+
+        <template>
+
+            <think>
+
+                <set name="device">BOTH</set>
+
+                <set name="command"><star/></set>
+
+            </think>
+
+            <srai>FOLLOW COMMAND</srai>
+
+        </template>
+
+    </category>
+
+
+    <!-- ========================================= -->
+    <!-- SWITCH BOTH -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>SWITCH * BOTH</pattern>
+
+        <template>
+
+            <srai>
+                TURN <star/> BOTH
+            </srai>
+
+        </template>
+
+    </category>
+
+
+    <category>
+
+        <pattern>SWITCH BOTH *</pattern>
+
+        <template>
+
+            <srai>
+                TURN BOTH <star/>
+            </srai>
+
+        </template>
+
+    </category>
+
+
+    <!-- ========================================= -->
+    <!-- HUMAN RESPONSE -->
+    <!-- ========================================= -->
+
+    <category>
+
+        <pattern>FOLLOW COMMAND</pattern>
+
+        <template>
+
+            <random>
+
+                <li>
+                    Okay, turning <get name="command"/> <get name="device"/> now.
+                </li>
+
+                <li>
+                    Sure! Turning <get name="command"/> <get name="device"/>.
+                </li>
+
+                <li>
+                    On it! Turning <get name="command"/> <get name="device"/>.
+                </li>
+
+                <li>
+                    Okay boss, turning <get name="command"/> <get name="device"/>.
+                </li>
+
+                <li>
+                    Your wish is my command. Turning <get name="command"/> <get name="device"/>.
+                </li>
+
+                <li>
+                    Right away! Turning <get name="command"/> <get name="device"/>.
+                </li>
+
+                <li>
+                    Consider it done. Turning <get name="command"/> <get name="device"/>.
+                </li>
+
+                <li>
+                    Working on it! Turning <get name="command"/> <get name="device"/>.
+                </li>
+
+            </random>
+
+        </template>
+
+    </category>
+
+</aiml>
